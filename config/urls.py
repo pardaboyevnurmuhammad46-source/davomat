@@ -13,8 +13,9 @@ from .views import (
     StudentProfileViewSet,
     ParentProfileViewSet,
     ScheduleViewSet,
-    # ExamViewSet,   # Exam modeli va viewset yo'q
+    # ExamViewSet,
     AnnouncementViewSet,
+    StudentAnalyticsAPIView
 )
 
 router = DefaultRouter()
@@ -38,4 +39,7 @@ urlpatterns = [
 
     path('grades/bulk-create/', BulkGradeCreateAPIView.as_view(), name='bulk-grade-create'),
     path('attendance/', SingleAttendanceAPIView.as_view(), name='single-attendance'),
+
+    path('admin/dashboard/', AdminDashboardAPIView.as_view(), name='admin-dashboard'),
+    path('analytics/student/<int:student_id>/', StudentAnalyticsAPIView.as_view(), name='student-analytics'),
 ]

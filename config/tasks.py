@@ -1,60 +1,51 @@
 import time
-from .models import StudentProfile, Subject, Attendance
+
 from celery import shared_task
 from django.core.mail import send_mail
 from django.utils.timezone import localdate
 
+from .models import Announcement, Attendance, StudentProfile, Subject, User
+from .telegram import send_telegram
+
+RETRY = dict(autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
+
+# xabar yuborish
+def notify(user, title, text):
+    if user.telegram_id and send_telegram(user.telegram_id, text):
+        return
+    if user.email:
+        send_mail(title, text, "maktabuz", [user.email])
 
 
-
-@shared_task(
-    name='send_grade_notification_task',
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_kwargs={'max_retries': 3},
-)
+@shared_task(name='send_grade_notification_task', **RETRY)
 def send_grade_notification_task(student_id, subject_id, grade_value):
     student = StudentProfile.objects.select_related('user').get(id=student_id)
     subject = Subject.objects.get(id=subject_id)
+    text = f"{student.user.first_name}: {subject.name} fanidan {grade_value} baho oldi."
 
-    # if student.telegram_id:
-    #     requests.post(
-    #         f"https://api.telegram.org/bot<TOKEN>/sendMessage",
-    #         json={
-    #             "chat_id": student.telegram_id,
-    #             "text": f"Hurmatli {student.first_name}, siz {subject.name} fanidan {grade_value} baho oldingiz."
-    #         }
-    #     )
-
-    if student.user.email:
-        send_mail(
-            subject="Yangi Baho",
-            message=f"Hurmatli {student.user.first_name}, siz {subject.name} fanidan {grade_value} baho oldingiz.",
-            from_email="noreply@maktab.uz",
-            recipient_list=[student.user.email],
-        )
-    return f"Notification sent to student {student_id}"
+    notify(student.user, "Yangi baho", text)
+    for parent in student.parents.select_related('user'):
+        notify(parent.user, "Yangi baho", text)
 
 
-@shared_task(
-    name='send_attendance_notification_task',
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_kwargs={'max_retries': 3},
-)
+@shared_task(name='send_attendance_notification_task', **RETRY)
 def send_attendance_notification_task(student_id, date, status):
     student = StudentProfile.objects.select_related('user').get(id=student_id)
     holat = dict(Attendance.Status.choices).get(status, status)
+    text = f"{student.user.first_name} {date} kuni: {holat}"
 
     for parent in student.parents.select_related('user'):
-        if parent.user.email:
-            send_mail(
-                subject="Davomat xabari",
-                message=f"{student.user.first_name} {date} kuni: {holat}",
-                from_email="noreply@maktab.uz",
-                recipient_list=[parent.user.email],
-            )
-    return f"Attendance notification sent for student {student_id}"
+        notify(parent.user, "Davomat xabari", text)
+
+
+@shared_task(name='send_announcement_task')
+def send_announcement_task(announcement_id):
+    announcement = Announcement.objects.get(id=announcement_id)
+    text = f"{announcement.title}\n\n{announcement.content}"
+    chat_ids = User.objects.filter(telegram_id__isnull=False).values_list('telegram_id', flat=True)
+    for chat_id in chat_ids:
+        send_telegram(chat_id, text)
+        time.sleep(0.05)
 
 
 @shared_task(name='send_daily_report_task', ignore_result=True)
@@ -62,53 +53,7 @@ def send_daily_report_task():
     today = localdate()
     absent = Attendance.objects.filter(date=today, status=Attendance.Status.ABSENT).count()
     late = Attendance.objects.filter(date=today, status=Attendance.Status.LATE).count()
-    print(f"HISOBOT {today}: kelmadi={absent}, kechikdi={late}")
-#
-# @shared_task
-# def send_grade_notification():
-#
-#     time.sleep(2)
-#     print(f"NOTIFICATION: O'quvchi ID-{student_id} ga Subject ID-{subject_id} fandan {grade_value} baho qo'yildi!")
-#     return f"Student {student_id} notified."
-#
-# @shared_task
-# def send_attendance_notification_task(student_id, date, status):
-#     time.sleep(2)
-#     print(f"ATTENDANCE ALERT: O'quvchi ID-{student_id} {date} sanasida status: '{status}' bo'ldi.")
-#     return f"Attendance notification sent for student {student_id}."
+    text = f"Hisobot {today}: kelmadi {absent}, kechikdi {late}"
 
-#
-# @shared_task
-# def send_grade_notification_task(student_id, subject_id, grade_value):
-
-
-
-
-# @shared_task(name='send_grade_notification_task')
-# def send_grade_notification_task(student_id, subject_id, grade_value):
-#     try:
-#         student = StudentProfile.objects.select_related('user').get(id=student_id)
-#         subject = Subject.objects.get(id=subject_id)
-#
-#         message = f"Hurmatli {student.user.first_name}, siz {subject.name} fanidan {grade_value} baho oldingiz."
-#
-#         if student.user.email:
-#             send_mail(
-#                 subject="Yangi Baho",
-#                 message=message,
-#                 from_email="noreply@maktab.uz",
-#                 recipient_list=[student.user.email],
-#             )
-#         return f"Notification sent to student {student_id}"
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-
-
-
-
-
-
-# @shared_task(name='send_attendance_notification_task')
-# def send_attendance_notification_task(student_id, date, status):
-#     pass
+    for admin in User.objects.filter(role=User.Role.ADMIN, telegram_id__isnull=False):
+        send_telegram(admin.telegram_id, text)

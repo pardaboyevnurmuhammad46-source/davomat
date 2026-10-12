@@ -186,3 +186,15 @@ CELERY_BEAT_SCHEDULE = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ALLOWED_HOSTS = ['*']
+
+
+BOT_TOKEN = config('BOT_TOKEN', default='')
+
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    # ... boshqa sozlamalar
+}

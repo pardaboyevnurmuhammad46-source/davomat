@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
-# 1. Custom User Model
+
 class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = 'ADMIN', 'Admin'
@@ -19,10 +19,9 @@ class User(AbstractUser):
         return f"{self.username} ({self.get_role_display()})"
 
 
-# 2. Sinf (Class) Modeli
 class SchoolClass(models.Model):
-    name = models.CharField(max_length=10) # Masalan: "9-A"
-    academic_year = models.CharField(max_length=9) # Masalan: "2025-2026"
+    name = models.CharField(max_length=10)
+    academic_year = models.CharField(max_length=9)
 
     class Meta:
         verbose_name = "Sinf"
@@ -32,7 +31,6 @@ class SchoolClass(models.Model):
         return self.name
 
 
-# 3. Fanlar (Subject) Modeli
 class Subject(models.Model):
     name = models.CharField(max_length=100)
 
@@ -40,7 +38,6 @@ class Subject(models.Model):
         return self.name
 
 
-# 4. Ustoz Profil Modeli
 class TeacherProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile')
     subjects = models.ManyToManyField(Subject, related_name='teachers')
@@ -53,7 +50,6 @@ class TeacherProfile(models.Model):
         return f"Ustoz: {self.user.get_full_name() or self.user.username}"
 
 
-# 5. O'quvchi Profil Modeli
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     # on_delete PROTECT: o'quvchisi bor sinfni tasodifan o'chirib bo'lmaydi
@@ -64,7 +60,6 @@ class StudentProfile(models.Model):
         return f"O'quvchi: {self.user.get_full_name()} ({self.school_class.name})"
 
 
-# 6. Ota-ona Profil Modeli
 class ParentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_profile')
     children = models.ManyToManyField(StudentProfile, related_name='parents')
@@ -73,7 +68,6 @@ class ParentProfile(models.Model):
         return f"Ota-ona: {self.user.get_full_name()}"
 
 
-# 7. Davomat (Attendance) Modeli
 class Attendance(models.Model):
     class Status(models.TextChoices):
         PRESENT = 'PRESENT', 'Kelgan'
@@ -96,7 +90,6 @@ class Attendance(models.Model):
         return f"{self.student.user.first_name} - {self.date} - {self.status}"
 
 
-# 8. Baholar (Grade) Modeli
 class Grade(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='grades')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
@@ -110,7 +103,7 @@ class Grade(models.Model):
         return f"{self.student.user.first_name} - {self.subject.name}: {self.grade}"
 
 
-# 9. Dars Jadvali (Schedule) Modeli
+#  Dars Jadvali
 class Schedule(models.Model):
     school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='schedules')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
@@ -124,7 +117,7 @@ class Schedule(models.Model):
         return self.teacher.user.get_full_name() if self.teacher else ""
 
 
-# 10. E'lonlar (Announcement) Modeli
+# E'lonlar
 class Announcement(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()

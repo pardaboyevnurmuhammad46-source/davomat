@@ -14,7 +14,6 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('username', 'first_name', 'last_name', 'phone', 'telegram_id')
     ordering = ('username',)
 
-    # User formasida qo'shimcha maydonlarni ko'rsatish
     fieldsets = BaseUserAdmin.fieldsets + (
         ("Qo'shimcha ma'lumotlar", {'fields': ('role', 'phone', 'telegram_id')}),
     )
@@ -48,7 +47,7 @@ class TeacherProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'is_class_teacher', 'get_subjects')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
     list_filter = ('is_class_teacher', 'subjects')
-    filter_horizontal = ('subjects',) # ManyToMany maydonni qulay tanlash paneli
+    filter_horizontal = ('subjects',)
 
     @admin.display(description='Fanlari')
     def get_subjects(self, obj):
@@ -69,7 +68,7 @@ class StudentProfileAdmin(admin.ModelAdmin):
 class ParentProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'get_children')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
-    filter_horizontal = ('children',) # O'quvchilarni oson biriktirish uchun
+    filter_horizontal = ('children',)
 
     @admin.display(description="Farzandlari")
     def get_children(self, obj):
@@ -93,4 +92,4 @@ class GradeAdmin(admin.ModelAdmin):
     list_filter = ('grade', 'subject', 'date', 'student__school_class')
     search_fields = ('student__user__first_name', 'student__user__last_name', 'comment')
     date_hierarchy = 'date'
-    list_editable = ('grade',) # Bahoni tezkor o'zgartirish qulayligi
+    list_editable = ('grade',)

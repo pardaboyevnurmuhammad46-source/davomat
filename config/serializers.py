@@ -16,23 +16,26 @@ DAYS = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Ya
 #         model = Exam
 #         fields = '__all__'
 
+# elonlar
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = '__all__'
-
+# fan
 class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
         fields = ['id','name']
 
+# Sinflar
 class SchoolClassSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SchoolClass
         fields = ['id','name']
 
+# oqituvchi
 class TeacherProfileSerializer(serializers.ModelSerializer):
     subjects = SubjectSerializer(many=True, read_only=True)
     is_class_teacher = SchoolClassSerializer(read_only=True)
@@ -41,7 +44,7 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
         model = TeacherProfile
         fields = ['id', 'subjects', 'is_class_teacher']
 
-
+# oquvchi
 class StudentProfileSerializer(serializers.ModelSerializer):
 
     school_class = SchoolClassSerializer(read_only=True)
@@ -52,7 +55,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         model = StudentProfile
         fields = ['id','user', 'roll_number', 'school_class']
 
-
+# ota - ona
 class ParentProfileSerializer(serializers.ModelSerializer):
     children = StudentProfileSerializer(many=True, read_only=True)
 
@@ -60,7 +63,7 @@ class ParentProfileSerializer(serializers.ModelSerializer):
         model = ParentProfile
         fields = ['id', 'children']
 
-
+# user
 class UserProfileSerializer(serializers.ModelSerializer):
 
     profile = serializers.SerializerMethodField()
@@ -79,7 +82,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return None
 
 
-
+# token
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
@@ -89,7 +92,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['user'] = user_serializer.data
         return data
 
-
+# yangi user
 class UserCreateSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only = True, max_length = 64, min_length = 8)
@@ -106,7 +109,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-
+# oqituvchi profil qoshshish
 class TeacherProfileCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfile
@@ -136,7 +139,7 @@ class ParentProfileCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ParentProfile
         fields = '__all__'
-
+# davomat
 class SingleAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
@@ -202,6 +205,7 @@ class BulkGradeSerializer(serializers.Serializer):
     # grades = GradeCreateSerializer()
 
 
+# oqituvchining shaxsiy kabineti
 class TeacherDashboardSerializer(serializers.ModelSerializer):
     teacher_name = serializers.CharField(source='user.get_full_name', read_only=True)
     is_class_teacher_of = serializers.CharField(source='is_class_teacher.name', read_only=True, default=None)
@@ -223,7 +227,7 @@ class TeacherDashboardSerializer(serializers.ModelSerializer):
     #         return ScheduleSerializer(obj.schedules.filter(day="TODAY"), many=True).data
     #     return []
 
-    # "TODAY" degan kun bazada yo'q, shuning uchun haqiqiy kun nomi olinadi
+
     def get_today_lessons(self, obj):
         today = DAYS[localdate().weekday()]
         return ScheduleSerializer(obj.schedules.filter(day=today), many=True).data
@@ -235,7 +239,7 @@ class TeacherDashboardSerializer(serializers.ModelSerializer):
     def get_announcements(self, obj):
         return AnnouncementSerializer(Announcement.objects.filter(is_active=True)[:3], many=True).data
 
-
+# statistika
 class AdminDashboardSerializer(serializers.Serializer):
     total_students = serializers.IntegerField()
     total_teachers = serializers.IntegerField()
@@ -245,7 +249,7 @@ class AdminDashboardSerializer(serializers.Serializer):
     recent_announcements = AnnouncementSerializer(many=True)
     top_performing_classes = serializers.ListField(child=serializers.DictField())
 
-
+#1ta oquvchi statistika
 class StudentAnalyticsSerializer(serializers.Serializer):
     student_id = serializers.IntegerField()
     student_name = serializers.CharField()
@@ -261,6 +265,7 @@ class StudentAnalyticsSerializer(serializers.Serializer):
     attendance_percentage = serializers.FloatField()
 
 
+# butun sinf ststitika
 class ClassAnalyticsSerializer(serializers.Serializer):
     class_id = serializers.IntegerField()
     class_name = serializers.CharField()
@@ -274,19 +279,49 @@ class ClassAnalyticsSerializer(serializers.Serializer):
 
 
 
-
+# baxo
 class SingleGradeItemSerializer(serializers.Serializer):
     student_id = serializers.IntegerField()
     grade = serializers.IntegerField(min_value=1, max_value=5)
     comment = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
-
+# butun sinf uchun
 class BulkGradeCreateSerializer(serializers.Serializer):
     subject_id = serializers.IntegerField()
-    # Grade.date endi auto_now_add emas, shuning uchun sana yuborish mumkin (yuborilmasa bugun)
     date = serializers.DateField(default=localdate)
-    # bo'sh ro'yxat yuborib bo'lmaydi
     grades = SingleGradeItemSerializer(many=True, allow_empty=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

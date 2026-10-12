@@ -43,3 +43,9 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+
+  bot:
+    build: .
+    command: python manage.py runbot
+    volumes:
+      - .:/app
